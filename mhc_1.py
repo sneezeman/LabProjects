@@ -6,7 +6,7 @@ from itertools import islice
 import math
 import numpy as np
 
-# Set output filename
+# Set output filename 
 filename = ('mhc_output ' + strftime('%d-%m-%Y %H:%M:%S') + '.csv')
 dataStart = 0;
 
@@ -57,13 +57,7 @@ def getData(filename, fristExecution):
 					y_massive.append(float(line_massive[3]))
 					angle_massive.append(360 + round((math.degrees(math.atan2(float(line_massive[3]), \
 						float(line_massive[2])))),3))
-	# try:
-	# 	print time_massive[0]
-	# 	print x_massive[0]
-	# 	print y_massive[0]
-	# 	print angle_massive[0]
-	# except IndexError:
-	# 	pass
+
 	return time_massive, x_massive, y_massive, angle_massive
 
 def go():
