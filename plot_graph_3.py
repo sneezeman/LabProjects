@@ -1,5 +1,6 @@
-from Tkinter import Tk, Button, StringVar, DoubleVar, Label, Entry, Frame
+from Tkinter import Tk, Button, StringVar, DoubleVar, Label, Entry, Frame, Checkbutton, BooleanVar
 from tkFileDialog import askopenfilename
+from time import strftime
 import tkMessageBox
 import numpy as np
 import matplotlib
@@ -11,24 +12,26 @@ import collections
 import os
 import errno
 
+dirName = ('SvgPicFolder ' + strftime('%d-%m-%Y %H:%M:%S'))
 common_spike_list = []
 number_in_seq = -1
 
-# def make_sure_path_exists(path):
-#     try:
-#         os.makedirs(path)
-#     except OSError as exception:
-#         if exception.errno != errno.EEXIST:
-#             raise
+def make_sure_path_exists(path):
+    try:
+        os.makedirs(path)
+    except OSError as exception:
+        if exception.errno != errno.EEXIST:
+            raise
 
-# def save_all():
-# 	make_sure_path_exists('/'.join(data_file.split('/')[0:-1]))
-# 	savefig()
+def saveFigure(cellNumber):
+	make_sure_path_exists(dirName)
+	plt.savefig(dirName + '/' + cellNumber, bbox_inches='tight')
 
 def f_open():
 	global data_file
 	data_file = askopenfilename()
 	data_path.set(data_file)
+	
 
 def most_common_spikes(from_button):
 	global counter
@@ -44,25 +47,27 @@ def most_common_spikes(from_button):
 					second_spikes_massive.append(int(k));
 
 	counter = collections.Counter(second_spikes_massive).most_common()
+
 	if from_button:
-		tkMessageBox.showinfo('Most common spikes list', counter)
+		tkMessageBox.showinfo('Most common spikes list', 'Cell number, times \n' + str(counter).replace('[', '').replace(']',''))
 
 def next_common(forward):
 	global number_in_seq
 	most_common_spikes(False)
 	if forward: 
-		if number_in_seq < len(counter):
+		if number_in_seq < len(counter)-1:
 			number_in_seq = number_in_seq + 1
-			main(counter[number_in_seq][0])
+			main(counter[number_in_seq][0], False)
 	else:
 		if number_in_seq < 0:
 			number_in_seq = number_in_seq + 1
-			main(counter[number_in_seq][0])	
+			main(counter[number_in_seq][0], False)	
 		if number_in_seq != 0:
 			number_in_seq = number_in_seq - 1
-			main(counter[number_in_seq][0])
+			main(counter[number_in_seq][0], False)
 	cell_number_plotted.set(counter[number_in_seq][0])
-	plt.savefig(str(counter[number_in_seq][0]) + '.svg', bbox_inches='tight')
+	if bool_save.get():
+		saveFigure(str(counter[number_in_seq][0]) + '.svg')
 	
 
 # plotting function: clear current, plot & redraw
@@ -70,12 +75,30 @@ def plot(theta, r, theta_s, r_s):
     plt.clf()
     ax = plt.subplot(111, projection='polar')
     ax.plot(theta, r, color = 'black', linewidth=0.3)
-    #ax.plot(theta_s, r_s, marker='x', markersize=10, color = np.random.rand(3,1) ,linestyle = 'None')
     ax.plot(theta_s, r_s, marker='x', markersize=10, color = 'red' ,linestyle = 'None')
     plt.gcf().canvas.draw()
     toolbar.update()
 
-def main(spike_number):
+def plotAll(theta, r, theta_s, r_s):
+    if firstTime:
+        plt.clf()
+    ax = plt.subplot(111, projection='polar')
+    if firstTime:
+        ax.plot(theta, r, color = 'black', linewidth=0.3)
+    
+    ax.plot(theta_s, r_s, marker='x', markersize=10, color = np.random.rand(3,1) ,linestyle = 'None')
+    plt.gcf().canvas.draw()
+    toolbar.update()
+
+def mainShowAll():
+	most_common_spikes(False)
+	global firstTime
+	firstTime = True
+	for pair in counter:
+		main(pair[0], True)
+		firstTime = False
+
+def main(spike_number, showAll):
 	cell_number_plotted.set('')
 	try:
 		int(spike_number)
@@ -101,7 +124,10 @@ def main(spike_number):
 						r_s.append(line_massive[0])
 						theta_s.append(float(line_massive[1])*2*math.pi/360)
 
-	plot(theta, r, theta_s, r_s)
+	if showAll:
+		plotAll(theta, r, theta_s, r_s)
+	else:
+		plot(theta, r, theta_s, r_s)
 
 def _quit():
     root.quit()     # stops mainloop
@@ -111,6 +137,7 @@ def _quit():
 root = Tk()
 data_path = StringVar()
 cell_number_plotted = StringVar()
+bool_save = BooleanVar()
 data_path.set('First of all, open a file!')
 
 Button(text='Open', command=f_open).pack()
@@ -125,11 +152,13 @@ Label(frame2, textvariable = cell_number_plotted).pack(side = 'left')
 frame1 = Frame(root)
 frame1.pack()
 Button(frame1, text="Prev common", command = lambda: next_common(False)).pack(side='left')
-Button(frame1, text="Plot!", command = lambda: main(E1.get())).pack(side='left')
+Button(frame1, text="Plot!", command = lambda: main(E1.get(),False)).pack(side='left')
 Button(frame1, text="Next common", command = lambda: next_common(True)).pack(side='left')
+Checkbutton(frame1, text="Save?", variable = bool_save).pack(side='left')
+Button(root, text = "Show all", command = lambda: mainShowAll()).pack()
 
 # init figure
-fig = plt.figure(figsize=(18, 16), dpi=80)
+fig = plt.figure(figsize=(8, 6), dpi=80)
 canvas = FigureCanvasTkAgg(fig, root)
 toolbar = NavigationToolbar2TkAgg(canvas, root)
 canvas.get_tk_widget().pack()

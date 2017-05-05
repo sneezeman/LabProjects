@@ -97,18 +97,16 @@ speed_massive_alt_expanded = []
 speed_3 = []
 speed_3_exp = []
 
-# Set output filename
-filename = ('big_output ' + strftime('%d-%m-%Y %H:%M:%S') + '.csv')
-
 # Get header lines number
 with open(firstfile, 'rb') as inputfile:
 	first_line = inputfile.readline()
 	header_lines_number = float(first_line[-6:-4])
+	delimeter = first_line[-3]
 
 # Fill arrays with data
 with open(firstfile, 'rb') as inputfile:
 	for line in islice(inputfile, header_lines_number, None):
-		line_massive = line.split(',')
+		line_massive = line.split(delimeter)
 		if not line_massive[2].replace('.','').replace('-', '').isdigit():
 			continue
 		else:
@@ -142,16 +140,20 @@ with open(secondfile, 'rb') as spikes:
 		spikes_massive.append(str(line_array).strip("[]"))
 
 
-# Time shife usage
+# Time shife usage. Method 1 - create empty fields for track data
 for m in range(int(round((time_massive[0]-float(time_shift))*20))):
 	time_massive.insert(0, None)
 	speed_massive_expanded.insert(0, None)
 	angle_massive.insert(0, None)
 
+# Time shife usage. Method 2 - ?
 '''
 for x in range(int(round((time_massive[0]-float(time_shift))*20))):
 	line_array.insert(0, None)
 '''
+
+# Set output filename
+filename = ('big_output ' + strftime('%d-%m-%Y %H:%M:%S') + '.csv')
 
 # Creating output
 with open (filename, 'w') as big_output:
