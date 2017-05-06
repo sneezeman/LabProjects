@@ -14,7 +14,9 @@ import errno
 
 dirName = ('SvgPicFolder ' + strftime('%d-%m-%Y %H:%M:%S'))
 common_spike_list = []
+speedNormalized = []
 number_in_seq = -1
+cmap = plt.get_cmap('hot')
 
 def make_sure_path_exists(path):
     try:
@@ -71,20 +73,28 @@ def next_common(forward):
 	
 
 # plotting function: clear current, plot & redraw
-def plot(theta, r, theta_s, r_s):
+def plot(theta, r, theta_s, r_s, speed):
     plt.clf()
     ax = plt.subplot(111, projection='polar')
-    ax.plot(theta, r, color = 'black', linewidth=0.3)
-    ax.plot(theta_s, r_s, marker='x', markersize=10, color = 'red' ,linestyle = 'None')
+    if boolSpeed.get():
+    	for x in range(len(theta)-1):
+    		ax.plot([theta[x], theta[x+1]],[r[x], r[x+1]], c = cmap(speed[x]), linewidth=0.7)
+    else:
+    	ax.plot(theta, r, color = 'black', linewidth=0.7)
+    ax.plot(theta_s, r_s, marker='2', markersize=10, color = 'green' ,linestyle = 'None')
     plt.gcf().canvas.draw()
     toolbar.update()
 
-def plotAll(theta, r, theta_s, r_s):
+def plotAll(theta, r, theta_s, r_s, speed):
     if firstTime:
         plt.clf()
     ax = plt.subplot(111, projection='polar')
     if firstTime:
-        ax.plot(theta, r, color = 'black', linewidth=0.3)
+    	if boolSpeed.get():
+    		for x in range(len(theta)-1):
+    			ax.plot([theta[x], theta[x+1]],[r[x], r[x+1]], c = cmap(speed[x]), linewidth=0.7)
+    	else:
+        	ax.plot(theta, r, color = 'black', linewidth=0.7)
     
     ax.plot(theta_s, r_s, marker='x', markersize=10, color = np.random.rand(3,1) ,linestyle = 'None')
     plt.gcf().canvas.draw()
@@ -105,6 +115,8 @@ def main(spike_number, showAll):
 	except ValueError:
 		spike_number = 0
 
+	speed = []
+	
 	r = []
 	theta = []
 	r_s = []
@@ -118,16 +130,32 @@ def main(spike_number, showAll):
 			else:
 				r.append(line_massive[0])
 				theta.append(float(line_massive[1])*2*math.pi/360)
+				speed.append(float(line_massive[2]))
 			if not line_massive[0] == 'None' and line_massive[3] != 'None':
 				for k in line_massive[3].split(','):
 					if float(k) == float(spike_number):
 						r_s.append(line_massive[0])
 						theta_s.append(float(line_massive[1])*2*math.pi/360)
 
+	# Normalize speed to [0,1]
+	if not speedNormalized:
+		for i in range(len(speed)):
+			speedNormalized.append(speed[i]/float(max(speed)))
+
 	if showAll:
-		plotAll(theta, r, theta_s, r_s)
+		plotAll(theta, r, theta_s, r_s, speedNormalized)
 	else:
-		plot(theta, r, theta_s, r_s)
+		plot(theta, r, theta_s, r_s, speedNormalized)
+
+
+def saveAll(trashhold):
+	plt.ioff()
+	most_common_spikes(False)
+	for i in range(len(counter)):
+		if counter[i][1] >= int(trashhold):
+			main(counter[i][0], False)
+			saveFigure(str(counter[i][0]) + '.svg')
+	plt.ion()
 
 def _quit():
     root.quit()     # stops mainloop
@@ -138,6 +166,7 @@ root = Tk()
 data_path = StringVar()
 cell_number_plotted = StringVar()
 bool_save = BooleanVar()
+boolSpeed = BooleanVar()
 data_path.set('First of all, open a file!')
 
 Button(text='Open', command=f_open).pack()
@@ -155,7 +184,13 @@ Button(frame1, text="Prev common", command = lambda: next_common(False)).pack(si
 Button(frame1, text="Plot!", command = lambda: main(E1.get(),False)).pack(side='left')
 Button(frame1, text="Next common", command = lambda: next_common(True)).pack(side='left')
 Checkbutton(frame1, text="Save?", variable = bool_save).pack(side='left')
+Checkbutton(frame1, text="Speed?", variable = boolSpeed).pack(side='left')
 Button(root, text = "Show all", command = lambda: mainShowAll()).pack()
+frame3 = Frame(root)
+frame3.pack()
+Button(frame3, text = "Save all", command = lambda: saveAll(E2.get())).pack(side = 'left')
+E2 = Entry(frame3, bd = 5)
+E2.pack(side = 'left')
 
 # init figure
 fig = plt.figure(figsize=(8, 6), dpi=80)
