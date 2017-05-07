@@ -102,6 +102,7 @@ with open(firstfile, 'rb') as inputfile:
 	first_line = inputfile.readline()
 	header_lines_number = float(first_line[-6:-4])
 	delimeter = first_line[-3]
+	experimentNumber = inputfile.readline().split(delimeter)[1].replace('"','')
 
 # Fill arrays with data
 with open(firstfile, 'rb') as inputfile:
@@ -153,7 +154,7 @@ for x in range(int(round((time_massive[0]-float(time_shift))*20))):
 '''
 
 # Set output filename
-filename = ('big_output ' + strftime('%d-%m-%Y %H:%M:%S') + '.csv')
+filename = (experimentNumber + ' output ' + strftime('%d-%m-%Y %H:%M:%S') + '.csv')
 
 # Creating output
 with open (filename, 'w') as big_output:

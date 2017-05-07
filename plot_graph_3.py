@@ -12,7 +12,6 @@ import collections
 import os
 import errno
 
-dirName = ('SvgPicFolder ' + strftime('%d-%m-%Y %H:%M:%S'))
 common_spike_list = []
 speedNormalized = []
 number_in_seq = -1
@@ -47,6 +46,8 @@ def make_sure_path_exists(path):
             raise
 
 def saveFigure(cellNumber):
+	dirName = (data_file.split('/')[-1].split(' ')[0] +\
+ 	' PicFolder ' + strftime('%d-%m-%Y %H:%M:%S'))
 	make_sure_path_exists(dirName)
 	plt.savefig(dirName + '/' + cellNumber + extention.get(), bbox_inches='tight', dpi = 400)
 
