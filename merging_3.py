@@ -59,6 +59,15 @@ def callback2():
 	secondfile= askopenfilename()
 	spikes_path.set(secondfile)
 
+def callback3():
+	global thirdfile
+	thirdfile= askopenfilename()
+	stances_path.set(thirdfile)
+
+def createEmptyFieldsForTrackData(array):
+	for m in range(int(round((time_massive[0]-float(time_shift))*20))):
+		array.insert(0, None)
+
 def close_window():
 	global time_shift 
 	time_shift = E1.get()
@@ -66,16 +75,20 @@ def close_window():
 
 # Window disign
 master = Tk()
-master.geometry("800x200")
+master.geometry("800x250")
 track_path = StringVar()
 track_path.set('...')
 spikes_path = StringVar()
 spikes_path.set('...')
+stances_path = StringVar()
+stances_path.set('...')
 Button(text='Track', command=callback).pack(fill=X)
 Label(master, textvariable=track_path).pack(fill=X)
 Button(text='Spikes', command=callback2).pack(fill=X)
 Label(master, textvariable=spikes_path).pack(fill=X)
-L1 = Label(master, text="Time shift (VT. Example:12-2 23):")
+Button(text='Stances', command=callback3).pack(fill=X)
+Label(master, textvariable=stances_path).pack(fill=X)
+L1 = Label(master, text="Time shift (VT. Example:12-2 23.05):")
 L1.pack()
 E1 = Entry(master, bd=5)
 E1.pack()
@@ -96,6 +109,8 @@ speed_massive_alt = []
 speed_massive_alt_expanded = []
 speed_3 = []
 speed_3_exp = []
+stancesTimeArray = []
+stancesArray = []
 
 # Get header lines number
 with open(firstfile, 'rb') as inputfile:
@@ -140,12 +155,46 @@ with open(secondfile, 'rb') as spikes:
 			line_array.append(None)
 		spikes_massive.append(str(line_array).strip("[]"))
 
+if str(stances_path) != "...":
+	# Stances 
+	with open(thirdfile, 'rb') as stances:
+		lines = stances.readlines()
+		for line in lines:
+			stanceTime = line.split(';')[2].replace(' ','')
+			stanceStatus = line.split(';')[1].replace(' ','')
+			if stanceTime >= time_massive[0]*20:
+				stancesTimeArray.append(int(stanceTime));
+				stancesArray.append(int(stanceStatus));
+
+	shift = 0;
+	for i in range(1, len(stancesTimeArray)):
+		for j in range(stancesTimeArray[i+shift] - stancesTimeArray[i+shift-1]-1):
+			stancesTimeArray.insert(i+shift, None)
+			stancesArray.insert(i+shift, None)
+			shift = shift+1
+
+	for i in range(int(stancesTimeArray[0]-(time_massive[0]*20))):
+		stancesTimeArray.insert(0, None)
+		stancesArray.insert(0, None)
+
+	for i in range(int((time_massive[-1]*20)-stancesTimeArray[-1])):
+		stancesTimeArray.append(None)
+		stancesArray.append(None)
+
+		
+	createEmptyFieldsForTrackData(stancesTimeArray)
 
 # Time shife usage. Method 1 - create empty fields for track data
-for m in range(int(round((time_massive[0]-float(time_shift))*20))):
-	time_massive.insert(0, None)
-	speed_massive_expanded.insert(0, None)
-	angle_massive.insert(0, None)
+# for m in range(int(round((time_massive[0]-float(time_shift))*20))):
+# 	time_massive.insert(0, None)
+# 	speed_massive_expanded.insert(0, None)
+# 	angle_massive.insert(0, None)
+# 	stancesTimeArray.insert(0, None)
+
+createEmptyFieldsForTrackData(speed_massive_expanded)
+createEmptyFieldsForTrackData(angle_massive)
+createEmptyFieldsForTrackData(time_massive)
+
 
 # Time shife usage. Method 2 - ?
 '''
@@ -161,8 +210,10 @@ with open (filename, 'w') as big_output:
 	for i in range(len(time_massive)):
 		try:
 			big_output.write(str(time_massive[i]) +';' + str(angle_massive[i])+';' \
-			 + str(speed_massive_expanded[i])+';'  + str(spikes_massive[i]).replace(" ", "") +';' +'\n')
+			 + str(speed_massive_expanded[i])+';'  + str(spikes_massive[i]).replace(" ", "") + ';' + str(stancesArray[i]) +';' +'\n')
 		except IndexError:
 			pass
-
-print (str(len(time_massive) - len(spikes_massive)) + ' lines were not printed')
+# Desyncronisation 
+print (len(time_massive))
+print (len(stancesTimeArray))
+print (str(len(time_massive) - len(spikes_massive)) + ' lines were lost')
