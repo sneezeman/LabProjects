@@ -12,12 +12,13 @@ import collections
 import os
 import errno
 
-common_spike_list = []
-speedNormalized = []
+# For def next_common
 number_in_seq = -1
+# For coloring
 cmap = plt.get_cmap('hot')
 
-
+# Open file and normalize speed (responsible for lag after file choosing).
+# Normalize speed for cmap working
 def f_open():
 	global data_file
 	global speedNormalized
@@ -37,7 +38,7 @@ def f_open():
 	for i in range(len(speed)):
 		speedNormalized.append(speed[i]/float(max(speed)))
 
-
+# Create dir
 def make_sure_path_exists(path):
     try:
         os.makedirs(path)
@@ -45,12 +46,14 @@ def make_sure_path_exists(path):
         if exception.errno != errno.EEXIST:
             raise
 
+# Main saving method with dir creation
 def saveFigure(cellNumber):
 	dirName = (data_file.split('/')[-1].split(' ')[0] +\
  	' PicFolder ' + strftime('%d-%m-%Y %H:%M:%S'))
 	make_sure_path_exists(dirName)
 	plt.savefig(dirName + '/' + cellNumber + extention.get(), bbox_inches='tight', dpi = 400)
 
+# Creates and sorts list of most common spikes
 def most_common_spikes(from_button):
 	global counter
 	with open (data_file, 'rb') as spikes:
@@ -69,6 +72,7 @@ def most_common_spikes(from_button):
 	if from_button:
 		tkMessageBox.showinfo('Most common spikes list', 'Cell number, times \n' + str(counter).replace('[', '').replace(']',''))
 
+# Step forward/back in common spikes list
 def next_common(forward):
 	global number_in_seq
 	if forward: 
@@ -90,22 +94,44 @@ def next_common(forward):
 # plotting function: clear current, plot & redraw
 def plot(theta, r, theta_s, r_s, speed):
 	plt.clf()
-	ax = plt.subplot(111, projection='polar')
-	if lineType.get() == "Speed":
+	if boolPolar.get():
+		ax = plt.subplot(111, projection='polar')
+	else:
+		ax = plt.subplot(111)
+
+	if lineType.get() == "None":
+		ax.plot(theta, r, color = 'black', linewidth=0.7)
+
+	elif lineType.get() == "Speed":
 		for x in range(len(theta)-1):
 			ax.plot([theta[x], theta[x+1]],[r[x], r[x+1]], c = cmap(speed[x]), linewidth=0.7)
-	elif lineType.get() == "None":
-		ax.plot(theta, r, color = 'black', linewidth=0.7)
+
 	elif lineType.get() == "Direction":
-        	for x in range(1, len(theta)):
-        		if theta[x-1] - theta[x] >=0: 
-        			ax.plot([theta[x-1], theta[x]],[r[x-1], r[x]], c = 'c', linewidth=0.7)
-        		else:
-        			ax.plot([theta[x-1], theta[x]],[r[x-1], r[x]], c = 'm', linewidth=0.7)
+		for x in range(1, len(theta)):
+				if theta[x-1] - theta[x] >=0: 
+					ax.plot([theta[x-1], theta[x]],[r[x-1], r[x]], c = 'c', linewidth=0.7)
+				else:
+					ax.plot([theta[x-1], theta[x]],[r[x-1], r[x]], c = 'm', linewidth=0.7)
+
+	elif lineType.get() == "Direction + Stances":
+		isStance = -1
+		y = 0
+		for x in range(1, len(r)):
+			if r[x] == r_stances[y]:
+				isStance = isStance * (-1)
+				if y < len(r_stances)-1:
+					y = y + 1
+			if isStance == -1:
+				if theta[x-1] - theta[x] >=0: 
+					ax.plot([theta[x-1], theta[x]],[r[x-1], r[x]], c = 'c', linewidth=0.7)
+				else:
+					ax.plot([theta[x-1], theta[x]],[r[x-1], r[x]], c = 'm', linewidth=0.7)
+			elif isStance == 1:
+				ax.plot([theta[x-1], theta[x]],[r[x-1], r[x]], c = 'r', linewidth=1.3)
+			
 
 	ax.plot(theta_s, r_s, marker='2', markersize=10, color = 'green' ,linestyle = 'None')
 	firstPartOfName = 'clear plot'
-	plotStance(theta_stances_pos, r_stances_pos, theta_stances_neg, r_stances_neg, ax)
 	plt.gcf().canvas.draw()
 	if bool_save.get():
 		for element in counter:
@@ -114,41 +140,50 @@ def plot(theta, r, theta_s, r_s, speed):
 		if firstPartOfName == 'clear plot':
 			firstPartOfName = '0'
 		saveFigure(str(firstPartOfName) + '-' + E1.get())
-	
 	toolbar.update()
-
-def plotStance(theta_stances_pos, r_stances_pos, theta_stances_neg, r_stances_neg, ax):
-	if boolStance.get():
-		ax.plot(theta_stances_pos, r_stances_pos, marker='^', markersize=3, color = 'red' ,linestyle = 'None')
-		ax.plot(theta_stances_neg, r_stances_neg, marker='v', markersize=3, color = 'black' ,linestyle = 'None')
-
-# def plotDirection(theta, r):
-# 	turnaroundTimeArray = []
-# 	for i in range(1, len(theta)):
-# 		if theta[i-1] - theta[i] >= 0:	
 
 def plotAll(theta, r, theta_s, r_s, speed):
     if firstTime:
         plt.clf()
-    ax = plt.subplot(111, projection='polar')
+    if boolPolar.get():
+    	ax = plt.subplot(111, projection='polar')
+    else:
+    	ax = plt.subplot(111)
     if firstTime:
-    	if lineType.get() == "Speed":
+    	if lineType.get() == "None":
+        	ax.plot(theta, r, color = 'black', linewidth=0.7)
+
+    	elif lineType.get() == "Speed":
     		for x in range(len(theta)-1):
     			ax.plot([theta[x], theta[x+1]],[r[x], r[x+1]], c = cmap(speed[x]), linewidth=0.7)
-    	elif lineType.get() == "None":
-        	ax.plot(theta, r, color = 'black', linewidth=0.7)
+
         elif lineType.get() == "Direction":
         	for x in range(1, len(theta)):
         		if theta[x-1] - theta[x] >=0: 
         			ax.plot([theta[x-1], theta[x]],[r[x-1], r[x]], c = 'c', linewidth=0.7)
         		else:
         			ax.plot([theta[x-1], theta[x]],[r[x-1], r[x]], c = 'm', linewidth=0.7)
-    
+
+        elif lineType.get() == "Direction + Stances":
+		isStance = -1
+		y = 0
+		for x in range(1, len(r)):
+			if r[x] == r_stances[y]:
+				isStance = isStance * (-1)
+				y = y + 1
+			if isStance == -1:
+				if theta[x-1] - theta[x] >=0: 
+					ax.plot([theta[x-1], theta[x]],[r[x-1], r[x]], c = 'c', linewidth=0.7)
+				else:
+					ax.plot([theta[x-1], theta[x]],[r[x-1], r[x]], c = 'm', linewidth=0.7)
+			elif isStance == 1:
+				ax.plot([theta[x-1], theta[x]],[r[x-1], r[x]], c = 'r', linewidth=1.3)
+
     ax.plot(theta_s, r_s, marker='x', markersize=10, color = np.random.rand(3,1) ,linestyle = 'None')
-    plotStance(theta_stances_pos, r_stances_pos, theta_stances_neg, r_stances_neg, ax)
     plt.gcf().canvas.draw()
     toolbar.update()
 
+# Show all spikes at ones
 def mainShowAll():
 	global firstTime
 	firstTime = True
@@ -157,6 +192,18 @@ def mainShowAll():
 		firstTime = False
 	if bool_save.get():
 		saveFigure('All spikes')
+
+# Saves all cells that spiked more than trashhold 
+def saveAll(trashhold):
+	try:
+		int(trashhold)
+	except ValueError:
+		trashhold = 1
+	most_common_spikes(False)
+	for i in range(len(counter)):
+		if counter[i][1] >= int(trashhold):
+			main(counter[i][0], False)
+			saveFigure(str(counter[i][1]) + '-' + str(counter[i][0]))
 
 def main(spike_number, showAll):
 	try:
@@ -170,15 +217,9 @@ def main(spike_number, showAll):
 	theta_s = []
 	stances = []
 
-	global r_stances_pos
-	global theta_stances_pos 
-	global r_stances_neg 
-	global theta_stances_neg 
+	global r_stances
 
-	r_stances_pos = []
-	theta_stances_pos = []
-	r_stances_neg = []
-	theta_stances_neg = []
+	r_stances = []
 
 	with open(data_file, 'rb') as data:
 		lines = data.readlines()
@@ -196,31 +237,12 @@ def main(spike_number, showAll):
 						r_s.append(line_massive[0])
 						theta_s.append(float(line_massive[1])*2*math.pi/360)
 			if not line_massive[0] == 'None' and not line_massive[4] ==  'None':
-				if float(line_massive[4]) > 0:
-					r_stances_pos.append(line_massive[0])
-					theta_stances_pos.append(float(line_massive[1])*2*math.pi/360)
-				else:
-					r_stances_neg.append(line_massive[0])
-					theta_stances_neg.append(float(line_massive[1])*2*math.pi/360)
+				r_stances.append(line_massive[0])
 
 	if showAll:
 		plotAll(theta, r, theta_s, r_s, speedNormalized)
 	else:
 		plot(theta, r, theta_s, r_s, speedNormalized)
-
-	
-
-
-def saveAll(trashhold):
-	try:
-		int(trashhold)
-	except ValueError:
-		trashhold = 1
-	most_common_spikes(False)
-	for i in range(len(counter)):
-		if counter[i][1] >= int(trashhold):
-			main(counter[i][0], False)
-			saveFigure(str(counter[i][1]) + '-' + str(counter[i][0]))
 
 def _quit():
     root.quit()     # stops mainloop
@@ -233,9 +255,8 @@ cellNumberChoosed = StringVar()
 trashhold = StringVar()
 trashhold.set(1)
 bool_save = BooleanVar()
-boolStance = BooleanVar()
-# boolSpeed = BooleanVar()
-# boolDirection = BooleanVar()
+boolPolar = BooleanVar()
+boolPolar.set(True)
 lineType = StringVar()
 lineType.set("None") 
 data_path.set('First of all, open a file!')
@@ -245,26 +266,30 @@ extention.set(".png") # default value
 
 Button(text='Open', command=f_open).pack()
 Label(root, textvariable=data_path).pack()
+
 frame1 = Frame(root)
 frame1.pack()
 Button(frame1, text='Most common spikes list', command= lambda: most_common_spikes(True)).pack(side = 'left')
 Button(frame1, text = "Show all spikes", command = lambda: mainShowAll()).pack(side = 'left')
+Checkbutton(frame1, text="Polar plot", variable = boolPolar).pack(side='left')
+
 frame2 = Frame(root)
 frame2.pack()
 Label(frame2, text="Cell number: ").pack(side='left')
 E1 = Entry(frame2, textvariable = cellNumberChoosed, bd=5)
 E1.pack(side='left')
 Button(frame2, text="Plot!", command = lambda: main(E1.get(),False)).pack(side='left')
+Checkbutton(frame2, text="Save", variable = bool_save).pack(side='left')
+
 frame3 = Frame(root)
 frame3.pack()
 Button(frame3, text="Prev common", command = lambda: next_common(False)).pack(side='left')
 Button(frame3, text="Next common", command = lambda: next_common(True)).pack(side='left')
-Checkbutton(frame3, text="Save", variable = bool_save).pack(side='left')
-lineStyleOption = OptionMenu(frame3, lineType, "None", "Speed", "Direction")
+Label(frame3, text="Trajectory coloring: ").pack(side='left')
+lineStyleOption = OptionMenu(frame3, lineType, "None", "Speed", "Direction", "Direction + Stances")
 lineStyleOption.pack(side='left')
-# Checkbutton(frame3, text="Speed (~7 min per cell)", variable = boolSpeed).pack(side='left')
-# Checkbutton(frame3, text="Direction", variable = boolDirection).pack(side='left')
-Checkbutton(frame3, text="Stance", variable = boolStance).pack(side='left')
+
+
 frame4 = Frame(root)
 frame4.pack()
 Button(frame4, text = "Save all", command = lambda: saveAll(E2.get())).pack(side = 'left')
