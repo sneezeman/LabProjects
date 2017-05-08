@@ -89,37 +89,63 @@ def next_common(forward):
 
 # plotting function: clear current, plot & redraw
 def plot(theta, r, theta_s, r_s, speed):
-    plt.clf()
-    ax = plt.subplot(111, projection='polar')
-    if boolSpeed.get():
-    	for x in range(len(theta)-1):
-    		ax.plot([theta[x], theta[x+1]],[r[x], r[x+1]], c = cmap(speed[x]), linewidth=0.7)
-    else:
-    	ax.plot(theta, r, color = 'black', linewidth=0.7)
-    ax.plot(theta_s, r_s, marker='2', markersize=10, color = 'green' ,linestyle = 'None')
-    plt.gcf().canvas.draw()
-    firstPartOfName = 'clear plot'
-    if bool_save.get():
-    	for element in counter:
-    		if int(element[0]) == int(E1.get()):
-    			firstPartOfName = element[1]
-    	if firstPartOfName == 'clear plot':
-    		firstPartOfName = '0'
-    	saveFigure(str(firstPartOfName) + '-' + E1.get())
-    toolbar.update()
+	plt.clf()
+	ax = plt.subplot(111, projection='polar')
+	if lineType.get() == "Speed":
+		for x in range(len(theta)-1):
+			ax.plot([theta[x], theta[x+1]],[r[x], r[x+1]], c = cmap(speed[x]), linewidth=0.7)
+	elif lineType.get() == "None":
+		ax.plot(theta, r, color = 'black', linewidth=0.7)
+	elif lineType.get() == "Direction":
+        	for x in range(1, len(theta)):
+        		if theta[x-1] - theta[x] >=0: 
+        			ax.plot([theta[x-1], theta[x]],[r[x-1], r[x]], c = 'c', linewidth=0.7)
+        		else:
+        			ax.plot([theta[x-1], theta[x]],[r[x-1], r[x]], c = 'm', linewidth=0.7)
+
+	ax.plot(theta_s, r_s, marker='2', markersize=10, color = 'green' ,linestyle = 'None')
+	firstPartOfName = 'clear plot'
+	plotStance(theta_stances_pos, r_stances_pos, theta_stances_neg, r_stances_neg, ax)
+	plt.gcf().canvas.draw()
+	if bool_save.get():
+		for element in counter:
+			if int(element[0]) == int(E1.get()):
+				firstPartOfName = element[1]
+		if firstPartOfName == 'clear plot':
+			firstPartOfName = '0'
+		saveFigure(str(firstPartOfName) + '-' + E1.get())
+	
+	toolbar.update()
+
+def plotStance(theta_stances_pos, r_stances_pos, theta_stances_neg, r_stances_neg, ax):
+	if boolStance.get():
+		ax.plot(theta_stances_pos, r_stances_pos, marker='^', markersize=3, color = 'red' ,linestyle = 'None')
+		ax.plot(theta_stances_neg, r_stances_neg, marker='v', markersize=3, color = 'black' ,linestyle = 'None')
+
+# def plotDirection(theta, r):
+# 	turnaroundTimeArray = []
+# 	for i in range(1, len(theta)):
+# 		if theta[i-1] - theta[i] >= 0:	
 
 def plotAll(theta, r, theta_s, r_s, speed):
     if firstTime:
         plt.clf()
     ax = plt.subplot(111, projection='polar')
     if firstTime:
-    	if boolSpeed.get():
+    	if lineType.get() == "Speed":
     		for x in range(len(theta)-1):
     			ax.plot([theta[x], theta[x+1]],[r[x], r[x+1]], c = cmap(speed[x]), linewidth=0.7)
-    	else:
+    	elif lineType.get() == "None":
         	ax.plot(theta, r, color = 'black', linewidth=0.7)
+        elif lineType.get() == "Direction":
+        	for x in range(1, len(theta)):
+        		if theta[x-1] - theta[x] >=0: 
+        			ax.plot([theta[x-1], theta[x]],[r[x-1], r[x]], c = 'c', linewidth=0.7)
+        		else:
+        			ax.plot([theta[x-1], theta[x]],[r[x-1], r[x]], c = 'm', linewidth=0.7)
     
     ax.plot(theta_s, r_s, marker='x', markersize=10, color = np.random.rand(3,1) ,linestyle = 'None')
+    plotStance(theta_stances_pos, r_stances_pos, theta_stances_neg, r_stances_neg, ax)
     plt.gcf().canvas.draw()
     toolbar.update()
 
@@ -142,6 +168,18 @@ def main(spike_number, showAll):
 	theta = []
 	r_s = []
 	theta_s = []
+	stances = []
+
+	global r_stances_pos
+	global theta_stances_pos 
+	global r_stances_neg 
+	global theta_stances_neg 
+
+	r_stances_pos = []
+	theta_stances_pos = []
+	r_stances_neg = []
+	theta_stances_neg = []
+
 	with open(data_file, 'rb') as data:
 		lines = data.readlines()
 		for line in lines:
@@ -157,11 +195,20 @@ def main(spike_number, showAll):
 					if float(k) == float(spike_number):
 						r_s.append(line_massive[0])
 						theta_s.append(float(line_massive[1])*2*math.pi/360)
+			if not line_massive[0] == 'None' and not line_massive[4] ==  'None':
+				if float(line_massive[4]) > 0:
+					r_stances_pos.append(line_massive[0])
+					theta_stances_pos.append(float(line_massive[1])*2*math.pi/360)
+				else:
+					r_stances_neg.append(line_massive[0])
+					theta_stances_neg.append(float(line_massive[1])*2*math.pi/360)
 
 	if showAll:
 		plotAll(theta, r, theta_s, r_s, speedNormalized)
 	else:
 		plot(theta, r, theta_s, r_s, speedNormalized)
+
+	
 
 
 def saveAll(trashhold):
@@ -186,7 +233,11 @@ cellNumberChoosed = StringVar()
 trashhold = StringVar()
 trashhold.set(1)
 bool_save = BooleanVar()
-boolSpeed = BooleanVar()
+boolStance = BooleanVar()
+# boolSpeed = BooleanVar()
+# boolDirection = BooleanVar()
+lineType = StringVar()
+lineType.set("None") 
 data_path.set('First of all, open a file!')
 extention = StringVar()
 extention.set(".png") # default value
@@ -209,7 +260,11 @@ frame3.pack()
 Button(frame3, text="Prev common", command = lambda: next_common(False)).pack(side='left')
 Button(frame3, text="Next common", command = lambda: next_common(True)).pack(side='left')
 Checkbutton(frame3, text="Save", variable = bool_save).pack(side='left')
-Checkbutton(frame3, text="Speed (~7 min per cell)", variable = boolSpeed).pack(side='left')
+lineStyleOption = OptionMenu(frame3, lineType, "None", "Speed", "Direction")
+lineStyleOption.pack(side='left')
+# Checkbutton(frame3, text="Speed (~7 min per cell)", variable = boolSpeed).pack(side='left')
+# Checkbutton(frame3, text="Direction", variable = boolDirection).pack(side='left')
+Checkbutton(frame3, text="Stance", variable = boolStance).pack(side='left')
 frame4 = Frame(root)
 frame4.pack()
 Button(frame4, text = "Save all", command = lambda: saveAll(E2.get())).pack(side = 'left')
