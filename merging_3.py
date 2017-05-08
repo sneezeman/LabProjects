@@ -183,6 +183,7 @@ if str(stances_path) != "...":
 
 		
 	createEmptyFieldsForTrackData(stancesTimeArray)
+	createEmptyFieldsForTrackData(stancesArray)
 
 # Time shife usage. Method 1 - create empty fields for track data
 # for m in range(int(round((time_massive[0]-float(time_shift))*20))):
@@ -215,5 +216,5 @@ with open (filename, 'w') as big_output:
 			pass
 # Desyncronisation 
 print (len(time_massive))
-print (len(stancesTimeArray))
+print (len(stancesArray))
 print (str(len(time_massive) - len(spikes_massive)) + ' lines were lost')
