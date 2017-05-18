@@ -137,10 +137,11 @@ with open(firstfile, 'rb') as inputfile:
 				float(line_massive[2])))),3))
 
 # Fill speed array
-for i in range(1, len(ten_boys_form_hood2(x_massive))):
-	speed_massive_expanded.append(round(math.sqrt((ten_boys_form_hood2(x_massive)[i] - \
-	ten_boys_form_hood2(x_massive)[i-1])**2 + (ten_boys_form_hood2(y_massive)[i] - \
-	ten_boys_form_hood2(y_massive)[i-1])**2), 3))
+x_massive_conv = ten_boys_form_hood2(x_massive)
+y_massive_conv = ten_boys_form_hood2(y_massive)
+for i in range(1, len(x_massive_conv)):
+	speed_massive_expanded.append(round(math.sqrt((x_massive_conv[i] - \
+	x_massive_conv[i-1])**2 + (y_massive_conv[i] - y_massive_conv[i-1])**2), 3))
 
 # Fill array with None 
 with open(secondfile, 'rb') as spikes:
@@ -169,9 +170,14 @@ if str(stances_path) != "...":
 	shift = 0;
 	for i in range(1, len(stancesTimeArray)):
 		for j in range(stancesTimeArray[i+shift] - stancesTimeArray[i+shift-1]-1):
-			stancesTimeArray.insert(i+shift, None)
-			stancesArray.insert(i+shift, None)
-			shift = shift+1
+			if stancesArray[i+shift] == -1:
+				stancesTimeArray.insert(i+shift, None)
+				stancesArray.insert(i+shift, 1)
+				shift = shift+1
+			else:
+				stancesTimeArray.insert(i+shift, None)
+				stancesArray.insert(i+shift, None)
+				shift = shift+1
 
 	for i in range(int(stancesTimeArray[0]-(time_massive[0]*20))):
 		stancesTimeArray.insert(0, None)
@@ -211,7 +217,9 @@ with open (filename, 'w') as big_output:
 	for i in range(len(time_massive)):
 		try:
 			big_output.write(str(time_massive[i]) +';' + str(angle_massive[i])+';' \
-			 + str(speed_massive_expanded[i])+';'  + str(spikes_massive[i]).replace(" ", "") + ';' + str(stancesArray[i]) +';' +'\n')
+			 + str(speed_massive_expanded[i])+';'  + str(spikes_massive[i]).replace(" ", "") + \
+		#	 ';' + str(stancesArray[i]).replace('-','') +';' +'\n')
+			';' + str(stancesArray[i]) +';' +'\n')
 		except IndexError:
 			pass
 # Desyncronisation 

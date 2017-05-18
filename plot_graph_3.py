@@ -22,6 +22,7 @@ cmap = plt.get_cmap('hot')
 def f_open():
 	global data_file
 	global speedNormalized
+	global dirName
 	speedNormalized = []
 	speed = []
 	data_file = askopenfilename()
@@ -38,6 +39,9 @@ def f_open():
 	for i in range(len(speed)):
 		speedNormalized.append(speed[i]/float(max(speed)))
 
+	dirName = (data_file.split('/')[-1].split(' ')[0] +\
+ 	' PicFolder ' + strftime('%d-%m-%Y %H:%M:%S'))
+
 # Create dir
 def make_sure_path_exists(path):
     try:
@@ -48,10 +52,9 @@ def make_sure_path_exists(path):
 
 # Main saving method with dir creation
 def saveFigure(cellNumber):
-	dirName = (data_file.split('/')[-1].split(' ')[0] +\
- 	' PicFolder ' + strftime('%d-%m-%Y %H:%M:%S'))
 	make_sure_path_exists(dirName)
-	plt.savefig(dirName + '/' + cellNumber + extention.get(), bbox_inches='tight', dpi = 400)
+	plt.savefig(dirName + '/' + cellNumber + ' ' + lineType.get() \
+		+ extention.get(), bbox_inches='tight', dpi = 400)
 
 # Creates and sorts list of most common spikes
 def most_common_spikes(from_button):
@@ -113,21 +116,36 @@ def plot(theta, r, theta_s, r_s, speed):
 				else:
 					ax.plot([theta[x-1], theta[x]],[r[x-1], r[x]], c = 'm', linewidth=0.7)
 
+	elif lineType.get() == "Stances":
+		ax.plot(theta, r, color = 'black', linewidth=0.7)
+		for x in range(1, len(theta)):
+			if stances[x] == '1':
+				ax.plot([theta[x-1], theta[x]],[r[x-1], r[x]], c = 'r', linewidth=1.3)
+
 	elif lineType.get() == "Direction + Stances":
-		isStance = -1
-		y = 0
-		for x in range(1, len(r)):
-			if r[x] == r_stances[y]:
-				isStance = isStance * (-1)
-				if y < len(r_stances)-1:
-					y = y + 1
-			if isStance == -1:
+		for x in range(1, len(theta)):
 				if theta[x-1] - theta[x] >=0: 
 					ax.plot([theta[x-1], theta[x]],[r[x-1], r[x]], c = 'c', linewidth=0.7)
 				else:
 					ax.plot([theta[x-1], theta[x]],[r[x-1], r[x]], c = 'm', linewidth=0.7)
-			elif isStance == 1:
-				ax.plot([theta[x-1], theta[x]],[r[x-1], r[x]], c = 'r', linewidth=1.3)
+				if stances[x] == '1':
+					ax.plot([theta[x-1], theta[x]],[r[x-1], r[x]], c = 'r', linewidth=1.3)
+
+	# elif lineType.get() == "Direction + Stances":
+	# 	isStance = -1
+	# 	y = 0
+	# 	for x in range(1, len(r)):
+	# 		if r[x] == r_stances[y]:
+	# 			isStance = isStance * (-1)
+	# 			if y < len(r_stances)-1:
+	# 				y = y + 1
+	# 		if isStance == -1:
+	# 			if theta[x-1] - theta[x] >=0: 
+	# 				ax.plot([theta[x-1], theta[x]],[r[x-1], r[x]], c = 'c', linewidth=0.7)
+	# 			else:
+	# 				ax.plot([theta[x-1], theta[x]],[r[x-1], r[x]], c = 'm', linewidth=0.7)
+	# 		elif isStance == 1:
+	# 			ax.plot([theta[x-1], theta[x]],[r[x-1], r[x]], c = 'r', linewidth=1.3)
 			
 
 	ax.plot(theta_s, r_s, marker='2', markersize=10, color = 'green' ,linestyle = 'None')
@@ -157,27 +175,20 @@ def plotAll(theta, r, theta_s, r_s, speed):
     		for x in range(len(theta)-1):
     			ax.plot([theta[x], theta[x+1]],[r[x], r[x+1]], c = cmap(speed[x]), linewidth=0.7)
 
-        elif lineType.get() == "Direction":
-        	for x in range(1, len(theta)):
-        		if theta[x-1] - theta[x] >=0: 
-        			ax.plot([theta[x-1], theta[x]],[r[x-1], r[x]], c = 'c', linewidth=0.7)
-        		else:
-        			ax.plot([theta[x-1], theta[x]],[r[x-1], r[x]], c = 'm', linewidth=0.7)
+    	elif lineType.get() == "Stances":
+			ax.plot(theta, r, color = 'black', linewidth=0.7)
+			for x in range(1, len(theta)):
+				if stances[x] == '1':
+					ax.plot([theta[x-1], theta[x]],[r[x-1], r[x]], c = 'r', linewidth=1.3)
 
-        elif lineType.get() == "Direction + Stances":
-		isStance = -1
-		y = 0
-		for x in range(1, len(r)):
-			if r[x] == r_stances[y]:
-				isStance = isStance * (-1)
-				y = y + 1
-			if isStance == -1:
+    	elif lineType.get() == "Direction + Stances":
+			for x in range(1, len(theta)):
 				if theta[x-1] - theta[x] >=0: 
 					ax.plot([theta[x-1], theta[x]],[r[x-1], r[x]], c = 'c', linewidth=0.7)
 				else:
 					ax.plot([theta[x-1], theta[x]],[r[x-1], r[x]], c = 'm', linewidth=0.7)
-			elif isStance == 1:
-				ax.plot([theta[x-1], theta[x]],[r[x-1], r[x]], c = 'r', linewidth=1.3)
+				if 	stances[x] == '1':
+					ax.plot([theta[x-1], theta[x]],[r[x-1], r[x]], c = 'r', linewidth=1.3)
 
     ax.plot(theta_s, r_s, marker='x', markersize=10, color = np.random.rand(3,1) ,linestyle = 'None')
     plt.gcf().canvas.draw()
@@ -205,6 +216,68 @@ def saveAll(trashhold):
 			main(counter[i][0], False)
 			saveFigure(str(counter[i][1]) + '-' + str(counter[i][0]))
 
+def correlSpikesStances(allOrNot):
+	numberOfTrue = 0
+	numberOfAll = 0
+	with open(data_file, 'rb') as data:
+		lines = data.readlines()
+		for line in lines:
+			lineArray = line.split(';')
+			if allOrNot:
+				if lineArray[3] != 'None':
+					for number in lineArray[3].split(','):
+						if lineArray[4] == '1':
+							numberOfTrue = numberOfTrue + 1
+						numberOfAll = numberOfAll + 1
+			else:
+				try:
+					cellNumberHere = str(cellNumberChoosed.get())
+				except ValueError:
+					cellNumberHere = 0
+
+				if lineArray[3] != 'None':
+					for number in lineArray[3].split(','):
+						if number == cellNumberHere:
+							numberOfAll = numberOfAll + 1
+							if lineArray[4] == '1':
+								numberOfTrue = numberOfTrue + 1
+
+	correlSpikesStancesAnswer.set( str(numberOfTrue) + ' / ' + str(numberOfAll) \
+		+ ' ~ ' + str(round(float(numberOfTrue)/float(numberOfAll),3)))
+
+def correlSpeedSpikes(allOrNot):
+	plt.clf()
+	speedAtSpike = []
+	with open(data_file, 'rb') as data:
+		lines = data.readlines()
+		for line in lines:
+			lineArray = line.split(';')
+			if allOrNot:
+				if lineArray[3] != 'None' and lineArray[2] != 'None':
+					for number in lineArray[3].split(','):
+						speedAtSpike.append(round(float(lineArray[2])))
+			else:
+				try:
+					cellNumberHere = str(cellNumberChoosed.get())
+				except ValueError:
+					cellNumberHere = 0
+
+				if lineArray[3] != 'None' and lineArray[2] != 'None':
+					for number in lineArray[3].split(','):
+						if number == cellNumberHere:
+							speedAtSpike.append(round(float(lineArray[2])))
+
+	print speedAtSpike
+	print collections.Counter(speedAtSpike).most_common()
+	ax = plt.subplot()
+	ax.hist(speedAtSpike, bins = max(speedAtSpike))
+	plt.xticks(np.arange(min(speedAtSpike), max(speedAtSpike)+1, 1.0))
+	plt.xlabel('Speed (cm/s)')
+	plt.ylabel('Number of spikes')
+	plt.grid(True)
+	plt.gcf().canvas.draw()
+	toolbar.update()
+
 def main(spike_number, showAll):
 	try:
 		int(spike_number)
@@ -215,11 +288,8 @@ def main(spike_number, showAll):
 	theta = []
 	r_s = []
 	theta_s = []
+	global stances
 	stances = []
-
-	global r_stances
-
-	r_stances = []
 
 	with open(data_file, 'rb') as data:
 		lines = data.readlines()
@@ -228,16 +298,18 @@ def main(spike_number, showAll):
 			if line_massive[0] == 'None':
 				continue
 			else:
-				r.append(line_massive[0])
+				r.append(float(line_massive[0]))
 				theta.append(float(line_massive[1])*2*math.pi/360)
 
 			if not line_massive[0] == 'None' and line_massive[3] != 'None':
 				for k in line_massive[3].split(','):
 					if float(k) == float(spike_number):
-						r_s.append(line_massive[0])
+						r_s.append(float(line_massive[0]))
 						theta_s.append(float(line_massive[1])*2*math.pi/360)
-			if not line_massive[0] == 'None' and not line_massive[4] ==  'None':
-				r_stances.append(line_massive[0])
+			# if not line_massive[0] == 'None' and not line_massive[4] ==  'None':
+			# 	r_stances.append(line_massive[0])
+			if not line_massive[0] == 'None':
+				stances.append(line_massive[4])
 
 	if showAll:
 		plotAll(theta, r, theta_s, r_s, speedNormalized)
@@ -262,6 +334,7 @@ lineType.set("None")
 data_path.set('First of all, open a file!')
 extention = StringVar()
 extention.set(".png") # default value
+correlSpikesStancesAnswer = StringVar()
 
 
 Button(text='Open', command=f_open).pack()
@@ -286,18 +359,27 @@ frame3.pack()
 Button(frame3, text="Prev common", command = lambda: next_common(False)).pack(side='left')
 Button(frame3, text="Next common", command = lambda: next_common(True)).pack(side='left')
 Label(frame3, text="Trajectory coloring: ").pack(side='left')
-lineStyleOption = OptionMenu(frame3, lineType, "None", "Speed", "Direction", "Direction + Stances")
+lineStyleOption = OptionMenu(frame3, lineType, "None", "Speed", "Stances" ,"Direction" , "Direction + Stances")
 lineStyleOption.pack(side='left')
 
 
 frame4 = Frame(root)
 frame4.pack()
 Button(frame4, text = "Save all", command = lambda: saveAll(E2.get())).pack(side = 'left')
-Label(frame4, text = "Trashold: ").pack(side='left')
+Label(frame4, text = "Threshold: ").pack(side='left')
 E2 = Entry(frame4, textvariable = trashhold,bd = 5)
 E2.pack(side = 'left')
 w = OptionMenu(frame4, extention, ".png", ".svg")
 w.pack()
+
+
+frame5 = Frame(root)
+frame5.pack()
+Button(frame5, text = 'Corr spikes/stances ALL', command = lambda: correlSpikesStances(True)).pack(side = 'left')
+Button(frame5, text = 'Corr spikes/stances THIS', command = lambda: correlSpikesStances(False)).pack(side = 'left')
+Button(frame5, text = 'Spike speed ALL', command = lambda: correlSpeedSpikes(True)).pack(side = 'left')
+Button(frame5, text = 'Spike speed THIS', command = lambda: correlSpeedSpikes(False)).pack(side = 'left')
+Label(frame5, textvariable = correlSpikesStancesAnswer).pack(side='left')
 
 # init figure
 fig = plt.figure(dpi=80)
